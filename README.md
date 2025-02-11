@@ -48,7 +48,7 @@ gcloud pubsub topics publish linkedin_run \
 | **DATASET_ID**  | Nome do banco de dados |
 | **TABLE_ID**    | Nome da tabela no BigQuery |
 | **ACCOUNT_ID**  | ID da conta de anúncios no LinkedIn |
-| **MESSAGE**     | `"get_linkedin"` (fixo) |
+| **MESSAGE**     | `"get_linkedin"` |
 | **DATE_PRESET** | Período da extração (`"past_90"` ou `"yesterday"`) |
 
 📌 **Importante:**  
