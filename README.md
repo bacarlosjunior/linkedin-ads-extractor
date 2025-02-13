@@ -1,21 +1,19 @@
-# 🚀 Inserção de Dados da API do LinkedIn no Google BigQuery  
+# 🚀 LinkedIn API Data Insertion into Google BigQuery  
 
-## 📌 Introdução  
+## 📌 Introduction  
+This project provides an **automated script** to extract campaign data from LinkedIn Ads and insert it into Google BigQuery.  
 
-Este projeto fornece um **script automatizado** para extrair dados de campanhas do LinkedIn Ads e inseri-los no Google BigQuery.  
+## ⚙️ Setup  
 
-## ⚙️ Configuração  
-
-### 1️⃣ Criar um tópico Pub/Sub  
-Antes de implantar a função na nuvem, crie um tópico no Pub/Sub:  
+### 1️⃣ Create a Pub/Sub Topic  
+Before deploying the function to the cloud, create a topic in Pub/Sub:  
 
 ```bash
 gcloud pubsub topics create linkedin_run
 ```
 
-### 2️⃣ Publicar a Cloud Function  
-
-Implante a função no Google Cloud Functions para processar os dados:  
+### 2️⃣ Deploy the Cloud Function  
+Deploy the function on Google Cloud Functions to process the data:  
 
 ```bash
 gcloud functions deploy get_linkedin_data \
@@ -27,12 +25,11 @@ gcloud functions deploy get_linkedin_data \
 
 ---
 
-## 🔄 Extração de Dados  
+## 🔄 Data Extraction  
+Extraction can be done with different time intervals. For the last 90 days, use `past_90`.  
 
-A extração pode ser feita com diferentes intervalos de tempo. Para os últimos 90 dias, utilize `past_90`.  
-
-### 🔹 Comando para Extração  
-No **Cloud Shell**, execute:  
+### 🔹 Extraction Command  
+In **Cloud Shell**, run:  
 
 ```bash
 gcloud pubsub topics publish linkedin_run \
@@ -40,45 +37,45 @@ gcloud pubsub topics publish linkedin_run \
   --attribute=project_id=PROJECT_ID,dataset_id=DATASET_ID,table_id=TABLE_ID,account_id=ACCOUNT_ID,date_preset=DATE_PRESET
 ```
 
-### 🔹 Parâmetros  
+### 🔹 Parameters  
 
-| Parâmetro      | Descrição |
+| Parameter      | Description |
 |---------------|--------------|
-| **PROJECT_ID**  | Nome do projeto no GCP |
-| **DATASET_ID**  | Nome do banco de dados |
-| **TABLE_ID**    | Nome da tabela no BigQuery |
-| **ACCOUNT_ID**  | ID da conta de anúncios no LinkedIn |
+| **PROJECT_ID**  | GCP project name |
+| **DATASET_ID**  | Database name |
+| **TABLE_ID**    | BigQuery table name |
+| **ACCOUNT_ID**  | LinkedIn Ads account ID |
 | **MESSAGE**     | `"get_linkedin"` |
-| **DATE_PRESET** | Período da extração (`"past_90"` ou `"yesterday"`) |
+| **DATE_PRESET** | Extraction period (`"past_90"` or `"yesterday"`) |
 
-📌 **Importante:**  
-- O **ACCESS_TOKEN** e **REFRESH_TOKEN** são necessários para a API do LinkedIn e devem estar no arquivo `ln_cred.json`.  
-- Tokens podem ser obtidos seguindo a [documentação oficial do LinkedIn](https://docs.microsoft.com/en-us/linkedin/marketing/getting-access).  
+📌 **Important:**  
+- **ACCESS_TOKEN** and **REFRESH_TOKEN** are required for the LinkedIn API and must be in the `ln_cred.json` file.  
+- Tokens can be obtained by following the [official LinkedIn documentation](https://docs.microsoft.com/en-us/linkedin/marketing/getting-access).  
 
 ---
 
-## 🔑 Renovação do Access Token  
+## 🔑 Access Token Renewal  
 
-A renovação do **ACCESS_TOKEN** ocorre **automaticamente** caso um erro de token inválido seja detectado.  
-Se a renovação automática falhar, siga estes passos:  
+The **ACCESS_TOKEN** is automatically renewed if an invalid token error is detected.  
+If automatic renewal fails, follow these steps:  
 
-### 🔹 Renovação Manual  
-1. Execute o script de renovação:  
+### 🔹 Manual Renewal  
+1. Run the renewal script:  
 
    ```bash
    python refresh_tokens.py
    ```
 
-2. Substitua as credenciais no arquivo **ln_cred.json** da Cloud Functions.  
-3. Confirme que o arquivo está no **bucket** correto (`extractors-ads`).  
+2. Replace the credentials in the **ln_cred.json** file in Cloud Functions.  
+3. Ensure the file is in the correct **bucket** (`extractors-ads`).  
 
 ---
 
-## 📅 Agendamento Diário da Extração  
+## 📅 Daily Extraction Scheduling  
 
-Podemos automatizar a extração diária dos dados criando um **Cloud Scheduler Job**.  
+Data extraction can be automated daily by creating a **Cloud Scheduler Job**.  
 
-### 🔹 Criando um Job Diário  
+### 🔹 Creating a Daily Job  
 ```bash
 gcloud beta scheduler jobs create pubsub job_name \
   --time-zone "America/Sao_Paulo" \
@@ -88,28 +85,29 @@ gcloud beta scheduler jobs create pubsub job_name \
   --attributes project_id=PROJECT_ID,dataset_id=DATASET_ID,table_id=TABLE_ID,account_id=ACCOUNT_ID,date_preset="yesterday"
 ```
 
-### 🔹 Parâmetros Explicados  
-- **job_name** → Nome do job, personalizar conforme necessário.  
-- **time-zone** → Define o fuso horário (ex: `America/Sao_Paulo`).  
-- **schedule** → Define a frequência da extração (`1 5 * * *` = todos os dias às 5AM).  
-- **date_preset="yesterday"** → Extração diária apenas do **dia anterior**.  
+### 🔹 Parameter Explanation  
+- **job_name** → Job name, customize as needed.  
+- **time-zone** → Defines the time zone (e.g., `America/Sao_Paulo`).  
+- **schedule** → Defines the extraction frequency (`1 5 * * *` = every day at 5 AM).  
+- **date_preset="yesterday"** → Daily extraction of **the previous day only**.  
 
 ---
 
-## 🆘 Solução de Problemas  
+## 🆘 Troubleshooting  
 
-Caso algo saia errado e a tabela precise ser corrigida, siga estas etapas:  
+If something goes wrong and the table needs to be fixed, follow these steps:  
 
-1️⃣ **Limpar a tabela antes de uma nova carga:**  
+1️⃣ **Clear the table before reloading:**  
 ```sql
-TRUNCATE TABLE `meu_projeto.meu_dataset.minha_tabela`
+TRUNCATE TABLE `my_project.my_dataset.my_table`
 ```
 
-2️⃣ **Rodar a extração novamente com `past_90`** para recuperar os dados dos últimos 90 dias.  
+2️⃣ **Run the extraction again with `past_90`** to retrieve the last 90 days of data.  
 
 ---
 
-## ✍️ Autor  
+## ✍️ Author  
 👤 **Carlos Junior**  
 
 ---
+
